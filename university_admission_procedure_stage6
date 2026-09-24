@@ -1,1 +1,77 @@
+# write your code here
+
+def import_applicants_data(filename):
+    file = open(filename, 'r')
+    applicants_data_inner = {}
+    line_counter = 0
+    for line in file:
+        line_counter += 1
+        line_split = line.strip().split()
+        applicants_data_inner[line_counter] = {'name': line_split[0],
+                                        'surname': line_split[1],
+                                        'physics': int(line_split[2]),
+                                        'chemistry': int(line_split[3]),
+                                        'math': int(line_split[4]),
+                                        'computer science': int(line_split[5]),
+                                        'special exam': int(line_split[6]),
+                                        'first_choice': line_split[7],
+                                        'second_choice': line_split[8],
+                                        'third_choice': line_split[9],
+                                        'physics and math': round((int(line_split[2]) + int(line_split[4])) / 2, 1),
+                                        'computer science and math': round((int(line_split[5]) + int(line_split[4]))/2, 1),
+                                        'chemistry and physics': round((int(line_split[3]) + int(line_split[2]))/2, 1)}
+    file.close()
+    return applicants_data_inner
+
+
+no_of_app_accepted = int(input())
+
+# general_list = import_applicants_data('database.txt')
+general_list = import_applicants_data('applicants.txt')
+
+departments_data = {'Biotech':{}, 'Chemistry':{}, 'Engineering':{}, 'Mathematics':{}, 'Physics':{}}
+
+# for applicant in general_list.values():
+#     print(applicant)
+#     print(applicant['name'], applicant['surname'], applicant['GPA'], applicant['first_choice'], applicant['second_choice'], applicant['third_choice'])
+
+choices = ['first_choice', 'second_choice', 'third_choice']
+exams = ['physics', 'chemistry', 'math', 'computer science']
+dept_exam = {'Biotech': 'chemistry and physics', 'Chemistry': 'chemistry', 'Engineering': 'computer science and math', 'Mathematics':'math', 'Physics':'physics and math'}
+
+for choice in choices:
+    # print(choice)
+    for exam in dept_exam.values():
+        # print(exam)
+        
+        # general list sorted by max from two values(1: dept_exam score, 2: special exam score) and then by name of applicant
+        general_list = dict(sorted(general_list.items(), key=lambda item: (-max(item[1][exam],item[1]['special exam']), item[1]['name'])))
+        # for applicant in general_list.values():
+        #     print(applicant['name'], applicant['surname'], applicant[exam], applicant[choice])
+        gen_list_keys = list(general_list.keys())
+        for applicant_key in gen_list_keys:
+            # print(applicant['name'], applicant['surname'], applicant['GPA'],)
+            choice_dep = general_list[applicant_key][choice]
+            # print(choice_dep)
+            accepted_by_department = len(departments_data[choice_dep])
+
+            # check if the exam is valid for the department of the actual choice
+            if exam == dept_exam[choice_dep]:
+
+                #check if there are still free places in the department
+                if accepted_by_department < no_of_app_accepted:
+                    departments_data[choice_dep][accepted_by_department + 1] = general_list[applicant_key]
+                    del general_list[applicant_key]
+
+for department_name in departments_data.keys():
+    # print(department_name)
+
+    dept_rank_dict = dict(sorted(departments_data[department_name].items(),
+                                 key=lambda item: (-max(item[1][dept_exam[department_name]], item[1]['special exam']), item[1]['name'])))
+    file = open(f'{department_name}.txt', 'w')
+
+    for applicant in dept_rank_dict.values():
+        file.write(applicant['name'] + ' ' + applicant['surname'] + ' ' + str(max(applicant[dept_exam[department_name]], applicant['special exam'])) + ' ' + '\n')
+    file.close()
+
 
