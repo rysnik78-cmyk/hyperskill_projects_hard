@@ -1,0 +1,289 @@
+# write your code here
+import string
+from collections import deque
+
+
+def even_minus_count(minuses):
+    # print(minuses)
+    # print(minuses.count('-'))
+    return minuses.count('-') % 2 == 0
+
+def decode_assigment(element_list):
+    if len(element_list) != 2:
+        return 'Invalid assignment'
+
+    left_side_string = element_list[0].strip()
+    right_side_string = element_list[1].strip()
+    bool_left_string_ascii = [letter in string.ascii_letters for letter in left_side_string]
+    bool_right_string_digits = [letter in string.digits for letter in right_side_string]
+    bool_right_string_ascii = [letter in string.ascii_letters for letter in right_side_string]
+
+    # print(left_side_string)
+    # print(right_side_string)
+    if not(all(bool_left_string_ascii)):
+        return 'Invalid identifier'
+
+    v_name = left_side_string
+
+    if not(all(bool_right_string_digits)):
+        if not (all(bool_right_string_ascii)):
+            return 'Invalid identifier'
+        if not (right_side_string in variables.keys()):
+            return 'Unknown variable'
+        v_value = variables[right_side_string]
+    else:
+        v_value = int(right_side_string)
+
+    variables[v_name] = v_value
+
+    return 'ok'
+
+def print_command(string_inner):
+    if string_inner == '/help':
+        return 'The program must calculate expressions like these: 4 + 6 - 8, 2 - 3 - 4, and so on.'
+    else:
+        return 'Unknown command'
+
+def is_oper_or_par(position):
+    operators = ['+', '-', '*', '/', '^']
+    parenthesis = ['(', ')']
+    return (position in operators) or (position in parenthesis)
+
+def is_oper(position):
+    operators = ['+', '-', '*', '/', '^']
+    return position in operators
+
+def position_is_digit(position):
+    if not position:
+        return False
+    else:
+        if position[0] == '-' and len(position) > 1:
+            bool_string_digits = [letter in string.digits for letter in position[1:]]
+        else:
+            bool_string_digits = [letter in string.digits for letter in position]
+        return all(bool_string_digits)
+
+def position_is_variable(position):
+    if not position:
+        return False
+    else:
+        if position[0] == '-' and len(position) > 1:
+            bool_string_ascii = [letter in string.ascii_letters for letter in position[1:]]
+        else:
+            bool_string_ascii = [letter in string.ascii_letters for letter in position]
+    return all(bool_string_ascii)
+
+def is_in_variable_keys(element):
+    if element[0] == '-' and len(element) > 1:
+        return element[1:] in variables.keys()
+    else:
+        return element in variables.keys()
+
+def infix_to_postfix(infix_expression):
+    operators_precedence = {'+':0, '-':0, '*':1, '/':1, '^':2}
+
+    # add spaces
+    infix_expression_with_spaces = ''
+    for index in range(len(infix_expression) - 1):
+        # if space
+        if infix_expression[index] == ' ':
+            # infix_expression_with_spaces += infix_expression[index] + ' '
+            continue
+        # if parenthesis
+        if infix_expression[index] == '(' or infix_expression[index] == ')':
+            infix_expression_with_spaces += infix_expression[index] + ' '
+            continue
+        if infix_expression[index] in string.digits and infix_expression[index + 1] in string.digits:
+            infix_expression_with_spaces += infix_expression[index]
+            continue
+        if infix_expression[index] in string.ascii_letters and infix_expression[index + 1] in string.ascii_letters:
+            infix_expression_with_spaces += infix_expression[index]
+            continue
+        if is_oper(infix_expression[index]) and is_oper(infix_expression[index + 1]):
+            if infix_expression[index] == infix_expression[index + 1] == '+':
+                continue
+            elif infix_expression[index] == infix_expression[index + 1] == '-':
+                infix_expression_with_spaces += infix_expression[index]
+                continue
+            else:
+                return 'Invalid expression'
+        else:
+            infix_expression_with_spaces += infix_expression[index] + ' '
+    infix_expression_with_spaces += infix_expression[-1]
+    # print(infix_expression_with_spaces)
+    postfix_expression = ''
+    operators_stack = []
+    infix_expression_split = infix_expression_with_spaces.split(' ')
+    for index in range(len(infix_expression_split)):
+        # if '+' in infix_expression_split[index]:
+        #     infix_expression_split[index] = '+'
+        if '-' in infix_expression_split[index]:
+            if even_minus_count(infix_expression_split[index]):
+                infix_expression_split[index] = '+'
+            else:
+                infix_expression_split[index] = '-'
+
+    # ADDING UNARY
+    infix_expression_split_unary = []
+    for index in range(len(infix_expression_split)):
+        # unary at the beginning
+        if index == 1 and infix_expression_split[0] == '-' and (infix_expression_split[index] in string.digits or infix_expression_split[index] in string.ascii_letters):
+            infix_expression_split_unary[0] += infix_expression_split[index]
+
+        # unary after '('
+        elif index > 1 and infix_expression_split[index - 1] == '-' and infix_expression_split[index - 2] == '(' and (infix_expression_split[index] in string.digits or infix_expression_split[index] in string.ascii_letters):
+            infix_expression_split_unary[-1] += infix_expression_split[index]
+
+        else:
+            infix_expression_split_unary.append(infix_expression_split[index])
+
+    # print('full inflix: ',infix_expression_split_unary)
+
+    # translating inflix to postfix
+
+    for position in infix_expression_split_unary:
+
+        # print('stack     ', operators_stack)
+        # print('postfix   ', postfix_expression,'\n')
+        # print('position  ', position)
+
+        # Add operands (numbers and variables) to the result (postfix notation) as they arrive.
+        if position_is_digit(position) or position_is_variable(position):
+            postfix_expression += position + ' '
+            continue
+
+        # If the stack is empty or contains a left parenthesis on top, push the incoming operator on the stack.
+        if is_oper(position):
+
+            if len(operators_stack) == 0:
+                operators_stack.append(position)
+                continue
+            if operators_stack[-1] == '(':
+                operators_stack.append(position)
+                continue
+
+            # If the incoming operator has higher precedence than the top of the stack, push it on the stack.
+            if operators_precedence[position] > operators_precedence[operators_stack[-1]]:
+                operators_stack.append(position)
+                continue
+
+            # If the precedence of the incoming operator is lower than or equal to that of the top of the stack,
+            # pop the stack and add operators to the result until you see an operator that has smaller precedence
+            # or a left parenthesis on the top of the stack; then add the incoming operator to the stack.
+            if operators_precedence[position] <= operators_precedence[operators_stack[-1]]:
+                while operators_precedence[position] <= operators_precedence[operators_stack[-1]] or operators_stack[-1] != '(':
+                    postfix_expression += operators_stack.pop() + ' '
+                    if len(operators_stack) == 0:
+                        break
+                operators_stack.append(position)
+                continue
+
+        # If the incoming element is a left parenthesis, push it on the stack.
+        if position == '(':
+            operators_stack.append(position)
+            continue
+
+        # If the incoming element is a right parenthesis,
+        # pop the stack and add operators to the result until you see a left parenthesis. Discard the pair of parentheses.
+        if position == ')':
+            while len(operators_stack) > 0:
+                first_operator = operators_stack.pop()
+                if first_operator == '(':
+                    break
+                else:
+                    postfix_expression += first_operator + ' '
+                    continue
+
+            # too much ')'
+            if first_operator != '(' and len(operators_stack) == 0:
+                    return 'Invalid expression'
+
+            continue
+
+    while len(operators_stack) > 0:
+        postfix_expression += operators_stack.pop() + ' '
+
+    # too much '('
+    if '(' in postfix_expression:
+        return 'Invalid expression'
+
+    return postfix_expression
+
+
+def postfix_to_value(postfix_expression):
+    if postfix_expression == 'Invalid expression' or postfix_expression == 'Invalid identifier':
+        return postfix_expression
+    else:
+        decoder_stack = []
+        # print(postfix_expression.split())
+        for element in postfix_expression.split():
+
+            # print('stack     ', decoder_stack)
+            # print('element   ', element, '\n')
+
+            if position_is_digit(element):
+                decoder_stack.append(int(element))
+                continue
+            if position_is_variable(element):
+                if is_in_variable_keys(element):
+                    if element[0] == '-':
+                        decoder_stack.append(-int(variables[element[1:]]))
+                    else:
+                        decoder_stack.append(int(variables[element]))
+                    continue
+                return 'Unknown variable'
+
+            if is_oper(element):
+                second_value = decoder_stack.pop()
+                first_value = decoder_stack.pop()
+                if element == '+':
+                    decoder_stack.append(first_value + second_value)
+                    continue
+                if element == '-':
+                    decoder_stack.append(first_value - second_value)
+                    continue
+                if element == '*':
+                    decoder_stack.append(first_value * second_value)
+                    continue
+                if element == '/':
+                    decoder_stack.append(first_value // second_value)
+                    continue
+                if element == '^':
+                    decoder_stack.append(first_value ** second_value)
+                    continue
+    return decoder_stack.pop()
+
+
+# MAIN BODY!!!!!!!
+
+variables = {}
+
+while True:
+    input_string = input()
+    if not input_string:
+        continue
+
+    # command
+    elif '/' == input_string[0]:
+        if input_string == '/exit':
+            break
+        else:
+            print(print_command(input_string))
+            continue
+
+    # assigment
+    elif '=' in input_string:
+        assigment_input_split = input_string.split('=')
+        assigment_output = decode_assigment(assigment_input_split)
+        if assigment_output != 'ok':
+            print(assigment_output)
+        continue
+        # print(variables)
+
+    # instruction
+    else:
+        postfix_expression = infix_to_postfix(input_string)
+        # print(postfix_expression)
+        print(postfix_to_value(postfix_expression))
+        continue
+print('Bye!')
