@@ -1,0 +1,138 @@
+# Write your code here
+import datetime
+
+from sqlalchemy import create_engine, Date, MetaData
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+# prints main menu
+def print_menu(menu):
+    for index in range(1, len(menu)):
+        print(f'{index}) {menu[index]}')
+    print(f'0) {menu[0]}')
+    pass
+
+# prints task for the specific day
+def print_tasks_for_the_day(date):
+    day_tasks_list = session.query(Table).filter(Table.deadline == date).all()
+    if day_tasks_list:
+        for index in range(len(day_tasks_list)):
+            print(f'{index+1}) {day_tasks_list[index].task}')
+    else:
+        print('Nothing to do!')
+
+# prints all tasks from database
+def print_all_tasks():
+    all_tasks_list = session.query(Table).order_by(Table.deadline).all()
+    # print(all_tasks_list)
+    if all_tasks_list:
+        for index in range(len(all_tasks_list)):
+            print(f'{index+1}. {all_tasks_list[index].task}. {all_tasks_list[index].deadline.day} {all_tasks_list[index].deadline.strftime('%b')}')
+    else:
+        print('Nothing to do!')
+
+# add one id + task + deadline to the database
+def add_one_task(task_description, task_deadline):
+
+    last_id_number = len(session.query(Table).all())
+    # print(last_id_number)
+    row = Table(id=last_id_number + 1, task=task_description, deadline=task_deadline)
+    # print(f'{row.id} {row.task} {row.deadline}')
+    session.add(row)
+    print('The task has been added!')
+
+def print_missed_tasks():
+    all_tasks_list = session.query(Table).filter(Table.deadline < datetime.datetime.today()).order_by(Table.deadline).all()
+    # print(all_tasks_list)
+    if all_tasks_list:
+        for index in range(len(all_tasks_list)):
+            print(f'{index+1}. {all_tasks_list[index].task}. {all_tasks_list[index].deadline.day} {all_tasks_list[index].deadline.strftime('%b')}')
+    else:
+        print('All tasks have been completed!')
+
+def delete_task(task_number):
+    all_tasks_list = session.query(Table).order_by(Table.deadline).all()
+    if all_tasks_list:
+        specific_row = all_tasks_list[task_number - 1]  # in case rows is not empty
+        session.delete(specific_row)
+    else:
+        print('Nothing to delete!')
+
+# engine = create_engine('sqlite:///todo.db', check_same_thread=False)
+
+engine = create_engine('sqlite:///todo.db')
+Base = declarative_base()
+class Table(Base):
+    __tablename__ = 'task'
+    id = Column(Integer, primary_key=True)
+    task = Column(String, default='default_value')
+    deadline = Column(Date, default=datetime.date.today())
+
+    def __repr__(self):
+        return f'{self.id}) {self.task}'
+
+Base.metadata.create_all(engine)
+metadata = MetaData()
+Session = sessionmaker(bind=engine)
+session = Session()
+
+menu = ["Exit", "Today's tasks", "Week's tasks", "All tasks", "Missed tasks", "Add a task", "Delete a task"]
+
+while True:
+    session.commit()
+    print_menu(menu)
+    command = input()
+    if command == "0":
+        print('')
+        break
+    if command == "1":
+        print('Today:', datetime.date.today().strftime('%d %b'))
+        print_tasks_for_the_day(datetime.date.today())
+        continue
+    if command == "2":
+        today = datetime.date.today()
+        # prints tasks within 7 days from today
+        for delta_day in range(7):
+            day = today + datetime.timedelta(days=delta_day)
+            print(f'{day.strftime('%A %d %b')}:')
+            print_tasks_for_the_day(day)
+            print('')
+            continue
+        continue
+
+    if command == "3":
+        print('')
+        print('All tasks:')
+        print_all_tasks()
+        continue
+
+    if command == "4":
+        print('')
+        print('Missed tasks')
+        print_missed_tasks()
+        print('')
+        continue
+
+    if command == "5":
+        print('')
+        print('Enter a task')
+        task_string = input()
+        print('Enter a deadline')
+        deadline_string = input()
+        add_one_task(task_string, datetime.datetime.strptime(deadline_string, '%Y-%m-%d'))
+        print('')
+        continue
+
+    if command == "6":
+        print('')
+        print('Choose the number of the task you want to delete:')
+        print_all_tasks()
+        task_number = int(input())
+        delete_task(task_number)
+        print('The task has been deleted!')
+        print('')
+        continue
+
+session.commit()
+print('Bye!')
